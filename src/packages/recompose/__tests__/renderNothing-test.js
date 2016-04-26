@@ -1,11 +1,8 @@
-import { expect } from 'chai'
-import { renderNothing } from 'recompose'
+import test from 'ava'
+import { renderNothing } from '../'
 
-describe('renderNothing()', () => {
-  it('returns a component that renders null', () => {
-    const Nothing = renderNothing('div')
-    const n = Nothing
-    expect(n()).to.be.null
-    expect(Nothing.displayName).to.equal('Nothing')
-  })
+test('renderNothing returns a component that renders null', t => {
+  const nothing = renderNothing('div')
+  t.is(nothing(), null)
+  t.is(nothing.displayName, 'Nothing')
 })

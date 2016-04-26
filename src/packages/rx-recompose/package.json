@@ -18,8 +18,8 @@
     "lodash": "^4.0.0"
   },
   "peerDependencies": {
-    "recompose": "^0.14.1",
-    "react": "^0.14.0"
+    "recompose": "^0.17.0",
+    "react": "^0.14.0 || ^15.0.0"
   },
   "devDependencies": {
     "rxjs": "^5.0.0-beta.0"

@@ -1,70 +1,56 @@
-import { shallowEqual } from 'recompose'
-import { expect } from 'chai'
+import test from 'ava'
+import { shallowEqual } from '../'
 
 // Adapted from https://github.com/rackt/react-redux/blob/master/test/utils/shallowEqual.spec.js
-describe('shallowEqual()', () => {
-  it('returns true if arguments are equal', () => {
-    expect(shallowEqual(expect, expect)).to.be.true
-  })
+test('shallowEqual returns true if arguments are equal, without comparing properties', t => {
+  const throwOnAccess = {
+    get foo() {
+      throw new Error('Property was accessed')
+    }
+  }
+  t.true(shallowEqual(throwOnAccess, throwOnAccess))
+})
 
-  it('returns true if arguments fields are equal', () => {
-    expect(
-      shallowEqual(
-        { a: 1, b: 2, c: undefined },
-        { a: 1, b: 2, c: undefined }
-      )
-    ).to.be.true
+test('shallowEqual returns true if arguments fields are equal', t => {
+  t.true(shallowEqual(
+    { a: 1, b: 2, c: undefined },
+    { a: 1, b: 2, c: undefined }
+  ))
 
-    expect(
-      shallowEqual(
-        { a: 1, b: 2, c: 3 },
-        { a: 1, b: 2, c: 3 }
-      )
-    ).to.be.true
+  t.true(shallowEqual(
+    { a: 1, b: 2, c: 3 },
+    { a: 1, b: 2, c: 3 }
+  ))
 
-    const o = {}
-    expect(
-      shallowEqual(
-        { a: 1, b: 2, c: o },
-        { a: 1, b: 2, c: o }
-      )
-    ).to.be.true
-  })
+  const o = {}
+  t.true(shallowEqual(
+    { a: 1, b: 2, c: o },
+    { a: 1, b: 2, c: o }
+  ))
+})
 
-  it('returns false if either argument is null or undefined', () => {
-    expect(
-      shallowEqual(null, { a: 1, b: 2 })
-    ).to.be.false
+test('shallowEqual returns false if either argument is null or undefined', t => {
+  t.false(shallowEqual(null, { a: 1, b: 2 }))
+  t.false(shallowEqual({ a: 1, b: 2 }, null))
+})
 
-    expect(
-      shallowEqual({ a: 1, b: 2 }, null)
-    ).to.be.false
-  })
+test('shallowEqual returns false if first argument has too many keys', t => {
+  t.false(shallowEqual(
+    { a: 1, b: 2, c: 3 },
+    { a: 1, b: 2 }
+  ))
+})
 
-  it('returns false if first argument has too many keys', () => {
-    expect(
-      shallowEqual(
-        { a: 1, b: 2, c: 3 },
-        { a: 1, b: 2 }
-      )
-    ).to.be.false
-  })
+test('shallowEqual returns false if second argument has too many keys', t => {
+  t.false(shallowEqual(
+    { a: 1, b: 2 },
+    { a: 1, b: 2, c: 3 }
+  ))
+})
 
-  it('returns false if second argument has too many keys', () => {
-    expect(
-      shallowEqual(
-        { a: 1, b: 2 },
-        { a: 1, b: 2, c: 3 }
-      )
-    ).to.be.false
-  })
-
-  it('returns false if arguments have different keys', () => {
-    expect(
-      shallowEqual(
-        { a: 1, b: 2, c: undefined },
-        { a: 1, bb: 2, c: undefined }
-      )
-    ).to.be.false
-  })
+test('shallowEqual returns false if arguments have different keys', t => {
+  t.false(shallowEqual(
+    { a: 1, b: 2, c: undefined },
+    { a: 1, bb: 2, c: undefined }
+  ))
 })

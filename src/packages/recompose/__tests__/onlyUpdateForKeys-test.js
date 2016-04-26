@@ -1,48 +1,29 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
-import omit from 'lodash/omit'
-import { onlyUpdateForKeys, compose, withState } from 'recompose'
-import createSpy from 'recompose/createSpy'
+import { onlyUpdateForKeys, compose, withState } from '../'
+import { mount } from 'enzyme'
 
-import { renderIntoDocument } from 'react-addons-test-utils'
+test('onlyUpdateForKeys implements shouldComponentUpdate()', t => {
+  const Counter = compose(
+    withState('counter', 'updateCounter', 0),
+    withState('foobar', 'updateFoobar', 'foobar'),
+    onlyUpdateForKeys(['counter'])
+  )('div')
 
-describe('onlyUpdateForKeys()', () => {
-  it('implements shouldComponentUpdate()', () => {
-    const spy = createSpy()
-    const Counter = compose(
-      withState('counter', 'updateCounter', 0),
-      withState('foobar', 'updateFoobar', 'foobar'),
-      onlyUpdateForKeys(['counter']),
-      spy
-    )('div')
+  t.is(Counter.displayName, 'withState(withState(onlyUpdateForKeys(div)))')
 
-    expect(Counter.displayName).to.equal(
-      'withState(withState(onlyUpdateForKeys(spy(div))))'
-    )
+  const div = mount(<Counter />).find('div')
+  const { updateCounter, updateFoobar } = div.props()
 
-    renderIntoDocument(<Counter pass="through" />)
+  t.is(div.prop('counter'), 0)
+  t.is(div.prop('foobar'), 'foobar')
 
-    expect(omit(spy.getProps(), ['updateCounter', 'updateFoobar'])).to.eql({
-      counter: 0,
-      foobar: 'foobar',
-      pass: 'through'
-    })
-    expect(spy.getRenderCount()).to.equal(1)
+  // Does not update
+  updateFoobar('barbaz')
+  t.is(div.prop('counter'), 0)
+  t.is(div.prop('foobar'), 'foobar')
 
-    spy.getProps().updateFoobar(() => 'barbaz')
-    expect(omit(spy.getProps(), ['updateCounter', 'updateFoobar'])).to.eql({
-      counter: 0,
-      foobar: 'foobar',
-      pass: 'through'
-    })
-    expect(spy.getRenderCount()).to.equal(1)
-
-    spy.getProps().updateCounter(n => n + 1)
-    expect(omit(spy.getProps(), ['updateCounter', 'updateFoobar'])).to.eql({
-      counter: 1,
-      pass: 'through',
-      foobar: 'barbaz'
-    })
-    expect(spy.getRenderCount()).to.equal(2)
-  })
+  updateCounter(42)
+  t.is(div.prop('counter'), 42)
+  t.is(div.prop('foobar'), 'barbaz')
 })

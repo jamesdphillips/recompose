@@ -1,48 +1,28 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
-import { defaultProps, pure, compose } from 'recompose'
-import createSpy from 'recompose/createSpy'
+import { defaultProps } from '../'
+import { shallow } from 'enzyme'
 
-import { renderIntoDocument } from 'react-addons-test-utils'
+test('defaultProps passes additional props to base component', t => {
+  const DoReMi = defaultProps({ so: 'do', la: 'fa' })('div')
+  t.is(DoReMi.displayName, 'defaultProps(div)')
 
-describe('defaultProps()', () => {
-  const spy = createSpy()
-  const DoReMi = compose(
-    defaultProps({ so: 'do', la: 'fa' }),
-    spy
-  )('div')
+  const div = shallow(<DoReMi />).find('div')
+  t.true(div.equals(<div so="do" la="fa" />))
+})
 
-  const DoSiLaSol = compose(
-    pure,
-    defaultProps({ so: 'do', la: 'fa' }),
-    spy
-  )('div')
+test('defaultProps has lower precendence than props from owner', t => {
+  const DoReMi = defaultProps({ so: 'do', la: 'fa' })('div')
+  t.is(DoReMi.displayName, 'defaultProps(div)')
 
-  it('passes additional props to base component', () => {
-    expect(DoReMi.displayName)
-      .to.equal('defaultProps(spy(div))')
+  const div = shallow(<DoReMi la="ti" />).find('div')
+  t.true(div.equals(<div so="do" la="ti" />))
+})
 
-    renderIntoDocument(<DoReMi />)
+test('defaultProps overrides undefined owner props', t => {
+  const DoReMi = defaultProps({ so: 'do', la: 'fa' })('div')
+  t.is(DoReMi.displayName, 'defaultProps(div)')
 
-    expect(spy.getProps()).to.eql({ so: 'do', la: 'fa' })
-  })
-
-  it('owner props take precendence', () => {
-    renderIntoDocument(<DoReMi la="ti" />)
-
-    expect(spy.getProps()).to.eql({ so: 'do', la: 'ti' })
-  })
-
-  it('it overrides undefined owner props', () => {
-    renderIntoDocument(<DoReMi la={undefined} />)
-
-    expect(spy.getProps()).to.eql({ so: 'do', la: 'fa' })
-  })
-
-  it('it should work in combination with other Recompose decorators', () => {
-    renderIntoDocument(<DoSiLaSol />)
-
-    expect(spy.getProps()).to.eql({ so: 'do', la: 'fa' })
-  })
-
+  const div = shallow(<DoReMi la={undefined} />).find('div')
+  t.true(div.equals(<div so="do" la="fa" />))
 })

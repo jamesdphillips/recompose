@@ -1,17 +1,14 @@
+import test from 'ava'
 import React, { PropTypes } from 'react'
-import { expect } from 'chai'
-import { setPropTypes } from 'recompose'
+import { setPropTypes } from '../'
 
-describe('setPropTypes()', () => {
-  it('sets a static property on the base component', () => {
-    const BaseComponent = () => <div />
-    const NewComponent = setPropTypes(
-      { foo: PropTypes.object },
-      BaseComponent
-    )
+test('setPropTypes sets a static property on the base component', t => {
+  const BaseComponent = () => <div />
+  const NewComponent = setPropTypes(
+    { foo: PropTypes.object }
+  )(BaseComponent)
 
-    expect(NewComponent.propTypes).to.eql({
-      foo: PropTypes.object
-    })
+  t.deepEqual(NewComponent.propTypes, {
+    foo: PropTypes.object
   })
 })

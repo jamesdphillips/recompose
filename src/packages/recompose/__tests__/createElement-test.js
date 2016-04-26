@@ -1,90 +1,75 @@
+import test from 'ava'
 import React, { Component } from 'react'
-import expect from 'expect'
 import createElement from '../createElement'
+import { shallow } from 'enzyme'
 
-import { createRenderer } from 'react-addons-test-utils'
-
-// These tests use the shallow renderer to inspect the React elements that are
-// owned by a component.
-describe('createElement()', () => {
-  it('treats class components normally', () => {
-    const renderer = createRenderer()
-
-    class InnerDiv extends Component {
-      render() {
-        return <div bar="baz" />
-      }
+test('createElement treats class components normally', t => {
+  class InnerDiv extends Component {
+    render() {
+      return <div bar="baz" />
     }
+  }
 
-    class OuterDiv extends Component {
-      render() {
-        return createElement('div', { foo: 'bar' },
-          createElement(InnerDiv)
-        )
-      }
-    }
-
-    renderer.render(<OuterDiv />)
-
-    expect(renderer.getRenderOutput()).toEqualJSX(
-      <div foo="bar">
-        <InnerDiv />
-      </div>
-    )
-  })
-
-  it('calls stateless function components instead of creating an intermediate React element', () => {
-    const renderer = createRenderer()
-
-    const InnerDiv = () => <div bar="baz" />
-    const OuterDiv = () =>
-      createElement('div', { foo: 'bar' },
+  class OuterDiv extends Component {
+    render() {
+      return createElement('div', { foo: 'bar' },
         createElement(InnerDiv)
       )
+    }
+  }
 
-    renderer.render(<OuterDiv />)
+  const wrapper = shallow(<OuterDiv />)
 
-    // Notice the difference between this and the previous test. Functionally,
-    // they're the same, but because we're using stateless function components
-    // here, createElement() can take advantage of referential transparency
-    expect(renderer.getRenderOutput()).toEqualJSX(
-      <div foo="bar">
-        <div bar="baz" />
-      </div>
-    )
-  })
+  t.true(wrapper.equals(
+    <div foo="bar">
+      <InnerDiv />
+    </div>
+  ))
+})
 
-  it('handles keyed elements correctly', () => {
-    const renderer = createRenderer()
-
-    const InnerDiv = () => <div bar="baz" />
-    const Div = () => createElement(InnerDiv, { foo: 'bar', key: 'key' })
-
-    renderer.render(<Div />)
-
-    expect(renderer.getRenderOutput()).toEqualJSX(
-      <InnerDiv foo="bar" key="key" />
-    )
-  })
-
-  it('passes children correctly', () => {
-    const renderer = createRenderer()
-
-    const Div = props => <div {...props} />
-    const InnerDiv = () => <div bar="baz" />
-    const OuterDiv = () =>
-      createElement(Div, { foo: 'bar' },
-        createElement(InnerDiv)
-      )
-
-    renderer.render(
-      <OuterDiv />
+test('createElement calls stateless function components instead of creating an intermediate React element', t => {
+  const InnerDiv = () => <div bar="baz" />
+  const OuterDiv = () =>
+    createElement('div', { foo: 'bar' },
+      createElement(InnerDiv)
     )
 
-    expect(renderer.getRenderOutput()).toEqualJSX(
-      <div foo="bar">
-        <div bar="baz" />
-      </div>
+  const wrapper = shallow(<OuterDiv />)
+
+  // Notice the difference between this and the previous test. Functionally,
+  // they're the same, but because we're using stateless function components
+  // here, createElement() can take advantage of referential transparency
+  t.true(wrapper.equals(
+    <div foo="bar">
+      <div bar="baz" />
+    </div>
+  ))
+})
+
+test('createElement handles keyed elements correctly', t => {
+  const InnerDiv = () => <div bar="baz" />
+  const Div = () => createElement(InnerDiv, { foo: 'bar', key: 'key' })
+
+  const wrapper = shallow(<Div />)
+
+  t.true(wrapper.equals(
+    <InnerDiv foo="bar" key="key" />
+  ))
+})
+
+test('createElement passes children correctly', t => {
+  const Div = props => <div {...props} />
+  const InnerDiv = () => <div bar="baz" />
+  const OuterDiv = () =>
+    createElement(Div, { foo: 'bar' },
+      createElement(InnerDiv)
     )
-  })
+
+  const wrapper = shallow(<OuterDiv />)
+
+  t.true(wrapper.equals(
+    <div foo="bar">
+      <div bar="baz" />
+    </div>
+  ))
 })

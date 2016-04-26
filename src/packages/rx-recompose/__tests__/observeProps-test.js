@@ -1,118 +1,129 @@
-import { expect } from 'chai'
+import test from 'ava'
 import React from 'react'
 import { Observable } from 'rxjs/Observable'
-import { ArrayObservable } from 'rxjs/observable/ArrayObservable'
 import { combineLatest } from 'rxjs/operator/combineLatest'
-import { concat } from 'rxjs/operator/concat'
 import { startWith } from 'rxjs/operator/startWith'
 import { scan } from 'rxjs/operator/scan'
 import { _do } from 'rxjs/operator/do'
 import { map } from 'rxjs/operator/map'
-import { toClass, withState, compose, branch } from 'recompose'
+import { withState, compose, branch } from 'recompose'
 import identity from 'lodash/identity'
-import createSpy from 'recompose/createSpy'
-import { observeProps, createEventHandler } from 'rx-recompose'
+import { observeProps, createEventHandler } from '../'
+import { mount, shallow } from 'enzyme'
 
+// Observable polyfill
 global.Observable = Observable
-const { of } = ArrayObservable
 
-import {
-  Simulate,
-  renderIntoDocument,
-  findRenderedDOMComponentWithTag,
-  findRenderedComponentWithType,
-  createRenderer
-} from 'react-addons-test-utils'
-
-const createSmartButton = BaseComponent =>
-  observeProps(props$ => {
-    const increment$ = createEventHandler()
-    const count$ = of(0)::concat(
-      increment$::scan(total => total + 1, 0)
-    )
+test('maps a stream of owner props to a stream of child props', t => {
+  const SmartButton = observeProps(props$ => {
+    const { handler: onClick, stream: increment$ } = createEventHandler()
+    const count$ = increment$
+      ::startWith(0)
+      ::scan(total => total + 1)
 
     return props$::combineLatest(count$, (props, count) => ({
       ...props,
-      onClick: increment$,
+      onClick,
       count
     }))
-  }, toClass(BaseComponent))
+  })('button')
 
-const Button = toClass(props => <button {...props} />)
+  t.is(SmartButton.displayName, 'observeProps(button)')
 
-describe('observeProps()', () => {
-  it('maps a stream of owner props to a stream of child props', () => {
-    const SmartButton = createSmartButton(props => <Button {...props} />)
-    expect(SmartButton.displayName).to.equal('observeProps(Component)')
+  const button = mount(<SmartButton pass="through" />).find('button')
 
-    const tree = renderIntoDocument(<SmartButton pass="through" />)
-    const button = findRenderedComponentWithType(tree, Button)
-    const buttonNode = findRenderedDOMComponentWithTag(tree, 'button')
+  button.simulate('click')
+  button.simulate('click')
+  button.simulate('click')
 
-    Simulate.click(buttonNode)
-    Simulate.click(buttonNode)
-    Simulate.click(buttonNode)
+  t.is(button.prop('count'), 3)
+  t.is(button.prop('pass'), 'through')
+})
 
-    expect(button.props.count).to.equal(3)
-    expect(button.props.pass).to.equal('through')
+test('works on initial render', t => {
+  const SmartButton = observeProps(props$ => {
+    const { handler: onClick, stream: increment$ } = createEventHandler()
+    const count$ = increment$
+      ::startWith(0)
+      ::scan(total => total + 1)
+
+    return props$::combineLatest(count$, (props, count) => ({
+      ...props,
+      onClick,
+      count
+    }))
+  })('button')
+
+  const button = shallow(<SmartButton pass="through" />).find('button')
+
+  t.is(button.prop('count'), 0)
+  t.is(button.prop('pass'), 'through')
+})
+
+test('receives prop updates', t => {
+  const SmartButton = observeProps(props$ => {
+    const { handler: onClick, stream: increment$ } = createEventHandler()
+    const count$ = increment$
+      ::startWith(0)
+      ::scan(total => total + 1)
+
+    return props$::combineLatest(count$, (props, count) => ({
+      ...props,
+      onClick,
+      count
+    }))
+  })('button')
+
+  const Container = withState('label', 'updateLabel', 'Count')(SmartButton)
+
+  const button = mount(<Container />).find('button')
+  const { updateLabel } = button.props()
+
+  t.is(button.prop('label'), 'Count')
+  updateLabel('Current count')
+  t.is(button.prop('label'), 'Current count')
+})
+
+test('unsubscribes before unmounting', t => {
+  const { handler: onClick, stream: increment$ } = createEventHandler()
+  let count = 0
+
+  const Container = compose(
+    withState('observe', 'updateObserve', false),
+    branch(
+      props => props.observe,
+      observeProps(() =>
+        increment$
+          ::_do(() => count += 1)
+          ::map(() => ({}))
+      ),
+      identity
+    )
+  )('div')
+
+  const div = mount(<Container />).find('div')
+  const { updateObserve } = div.props()
+
+  t.is(count, 0)
+  updateObserve(true) // Mount component
+  onClick()
+  t.is(count, 1)
+  onClick()
+  t.is(count, 2)
+  updateObserve(false) // Unmount component
+  onClick()
+  t.is(count, 2)
+})
+
+test('renders null until stream of props emits value', t => {
+  let observer
+  const props$ = new Observable(o => {
+    observer = o
   })
+  const Container = observeProps(() => props$)('div')
+  const wrapper = mount(<Container />)
 
-  it('works on initial render', () => {
-    const SmartButton1 = createSmartButton(props => <Button {...props} />)
-
-    // Test using shallow renderer, which only renders once
-    const renderer1 = createRenderer()
-
-    renderer1.render(<SmartButton1 pass="through" />)
-    const button1 = renderer1.getRenderOutput()
-    expect(button1.props.pass).to.equal('through')
-    expect(button1.props.count).to.equal(0)
-  })
-
-  it('receives prop updates', () => {
-    const spy = createSpy()
-    const SmartButton = createSmartButton(spy('div'))
-
-    const Container = withState('label', 'updateLabel', 'Count', SmartButton)
-
-    renderIntoDocument(<Container />)
-
-    expect(spy.getProps().label).to.equal('Count')
-    spy.getProps().updateLabel('Current count')
-    expect(spy.getProps().label).to.equal('Current count')
-  })
-
-  it('unsubscribes before unmounting', () => {
-    const spy = createSpy()
-    const increment$ = createEventHandler()
-    let count = 0
-
-    const Container = compose(
-      withState('observe', 'updateObserve', false),
-      spy,
-      branch(
-        props => props.observe,
-        observeProps(() =>
-          increment$
-            ::_do(() => count += 1)
-            ::map(() => ({}))
-            ::startWith(null)
-        ),
-        identity
-      )
-    )('div')
-
-    renderIntoDocument(<Container />)
-
-    const { updateObserve } = spy.getProps()
-    expect(count).to.equal(0)
-    updateObserve(true) // Mount component
-    increment$()
-    expect(count).to.equal(1)
-    increment$()
-    expect(count).to.equal(2)
-    updateObserve(false) // Unmount component
-    increment$()
-    expect(count).to.equal(2)
-  })
+  t.false(wrapper.some('div'))
+  observer.next({ foo: 'bar' })
+  t.is(wrapper.find('div').prop('foo'), 'bar')
 })

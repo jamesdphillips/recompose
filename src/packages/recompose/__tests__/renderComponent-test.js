@@ -1,45 +1,25 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
+import { renderComponent, withState, compose, branch } from '../'
+import { mount } from 'enzyme'
 
-import {
-  renderComponent,
-  compose,
-  withState,
-  branch,
-  withProps
-} from 'recompose'
+test('renderComponent always renders the given component', t => {
+  const Foobar = compose(
+    withState('flip', 'updateFlip', false),
+    branch(
+      props => props.flip,
+      renderComponent('div'),
+      renderComponent('span')
+    )
+  )(null)
 
-import createSpy from 'recompose/createSpy'
+  const wrapper = mount(<Foobar />)
+  const { updateFlip } = wrapper.find('span').props()
 
-import { renderIntoDocument } from 'react-addons-test-utils'
+  t.is(wrapper.find('span').length, 1)
+  t.is(wrapper.find('div').length, 0)
 
-describe('renderComponent()', () => {
-  it('always renders the given component', () => {
-    const spy = createSpy()
-
-    const Foobar = compose(
-      withState('flip', 'updateFlip', false),
-      branch(
-        props => props.flip,
-        renderComponent(
-          compose(
-            withProps({ foo: 'bar' }),
-            spy
-          )('div')
-        ),
-        renderComponent(
-          compose(
-            withProps({ foo: 'baz' }),
-            spy
-          )('div')
-        ),
-      )
-    )(null)
-
-    renderIntoDocument(<Foobar />)
-
-    expect(spy.getProps().foo).to.equal('baz')
-    spy.getProps().updateFlip(true)
-    expect(spy.getProps().foo).to.equal('bar')
-  })
+  updateFlip(true)
+  t.is(wrapper.find('span').length, 0)
+  t.is(wrapper.find('div').length, 1)
 })

@@ -1,30 +1,28 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
-import { getDisplayName } from 'recompose'
+import { getDisplayName } from '../'
 
-describe('getDisplayName()', () => {
-  it('gets the display name of a React component', () => {
-    class SomeComponent extends React.Component {
-      render() {
-        return <div />
-      }
-    }
-
-    class SomeOtherComponent extends React.Component {
-      static displayName = 'CustomDisplayName';
-      render() {
-        return <div />
-      }
-    }
-
-    function YetAnotherComponent() {
+test('getDisplayName gets the display name of a React component', t => {
+  class SomeComponent extends React.Component {
+    render() {
       return <div />
     }
+  }
 
-    expect(getDisplayName(SomeComponent)).to.equal('SomeComponent')
-    expect(getDisplayName(SomeOtherComponent)).to.equal('CustomDisplayName')
-    expect(getDisplayName(YetAnotherComponent)).to.equal('YetAnotherComponent')
-    expect(getDisplayName(() => <div />)).to.equal('Component')
-    expect(getDisplayName('div')).to.equal('div')
-  })
+  class SomeOtherComponent extends React.Component {
+    static displayName = 'CustomDisplayName';
+    render() {
+      return <div />
+    }
+  }
+
+  function YetAnotherComponent() {
+    return <div />
+  }
+
+  t.is(getDisplayName(SomeComponent), 'SomeComponent')
+  t.is(getDisplayName(SomeOtherComponent), 'CustomDisplayName')
+  t.is(getDisplayName(YetAnotherComponent), 'YetAnotherComponent')
+  t.is(getDisplayName(() => <div />), 'Component')
+  t.is(getDisplayName('div'), 'div')
 })

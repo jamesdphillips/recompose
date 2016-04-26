@@ -1,28 +1,27 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
-import { createSink, compose, withState, mapProps } from 'recompose'
+import { createSink, compose, withState, mapProps } from '../'
+import { mount } from 'enzyme'
+import sinon from 'sinon'
 
-import { renderIntoDocument } from 'react-addons-test-utils'
+test('createSink creates a React component that fires a callback when receiving new props', t => {
+  const spy = sinon.spy()
+  const Sink = createSink(spy)
+  const Counter = compose(
+    withState('counter', 'updateCounter', 0),
+    mapProps(({ updateCounter, ...rest }) => ({
+      increment: () => updateCounter(n => n + 1),
+      ...rest
+    }))
+  )(Sink)
 
-describe('createSink()', () => {
-  it('creates a React component that fires a callback when receiving new props', () => {
-    const spy = sinon.spy()
-    const Sink = createSink(spy)
-    const Counter = compose(
-      withState('counter', 'updateCounter', 0),
-      mapProps(({ updateCounter, ...rest }) => ({
-        increment: () => updateCounter(n => n + 1),
-        ...rest
-      }))
-    )(Sink)
+  mount(<div><Counter /></div>)
 
-    renderIntoDocument(<div><Counter /></div>)
-
-    const { increment } = spy.lastCall.args[0]
-    expect(spy.lastCall.args[0].counter).to.equal(0)
-    increment()
-    expect(spy.lastCall.args[0].counter).to.equal(1)
-    increment()
-    expect(spy.lastCall.args[0].counter).to.equal(2)
-  })
+  const { increment } = spy.lastCall.args[0]
+  const getCounter = () => spy.lastCall.args[0].counter
+  t.is(getCounter(), 0)
+  increment()
+  t.is(getCounter(), 1)
+  increment()
+  t.is(getCounter(), 2)
 })

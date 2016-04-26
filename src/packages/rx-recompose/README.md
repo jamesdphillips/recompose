@@ -91,8 +91,8 @@ const Counter = createComponent(props$ => {
       increment$::map(() => 1),
       decrement$::map(() => -1)
     )
-    ::scan((count, n) => count + n, 0)
     ::startWith(0)
+    ::scan((count, n) => count + n, 0)
 
   return props$::combineLatest(
     count$,

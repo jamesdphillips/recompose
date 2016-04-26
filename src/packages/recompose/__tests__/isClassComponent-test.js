@@ -1,28 +1,26 @@
+import test from 'ava'
 import React, { Component } from 'react'
-import { expect } from 'chai'
 import isClassComponent from '../isClassComponent'
 
-describe('isClassComponent()', () => {
-  it('returns false for functions', () => {
-    const Foo = () => <div />
+test('isClassComponent returns false for functions', t => {
+  const Foo = () => <div />
 
-    expect(isClassComponent(Foo)).to.be.false
-  })
+  t.false(isClassComponent(Foo))
+})
 
-  it('returns true for React component classes', () => {
-    class Foo extends Component {
-      render() {
-        return <div />
-      }
+test('isClassComponent returns true for React component classes', t => {
+  class Foo extends Component {
+    render() {
+      return <div />
     }
+  }
 
-    const Bar = React.createClass({
-      render() {
-        return <div />
-      }
-    })
-
-    expect(isClassComponent(Foo)).to.be.true
-    expect(isClassComponent(Bar)).to.be.true
+  const Bar = React.createClass({
+    render() {
+      return <div />
+    }
   })
+
+  t.true(isClassComponent(Foo))
+  t.true(isClassComponent(Bar))
 })

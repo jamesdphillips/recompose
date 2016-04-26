@@ -1,26 +1,17 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
-import { flattenProp, compose } from 'recompose'
-import createSpy from 'recompose/createSpy'
+import { flattenProp } from '../'
+import { shallow } from 'enzyme'
 
-import { renderIntoDocument } from 'react-addons-test-utils'
+test('flattenProps flattens an object prop and spreads it into the top-level props object', t => {
+  const Counter = flattenProp('state')('div')
+  t.is(Counter.displayName, 'flattenProp(div)')
 
-describe('flattenProp()', () => {
-  it('flattens an object prop and spreads it into the top-level props object', () => {
-    const spy = createSpy()
-    const Counter = compose(
-      flattenProp('state'),
-      spy
-    )('div')
+  const wrapper = shallow(
+    <Counter pass="through" state={{ counter: 1 }} />
+  )
 
-    expect(Counter.displayName).to.equal(
-      'flattenProp(spy(div))'
-    )
-
-    renderIntoDocument(
-      <Counter pass="through" state={{ counter: 1 }} />
-    )
-
-    expect(spy.getProps()).to.eql({ counter: 1, pass: 'through' })
-  })
+  t.true(wrapper.equals(
+    <div pass="through" counter={1} />
+  ))
 })

@@ -1,25 +1,16 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
-import { withProps, renameProp, compose } from 'recompose'
-import createSpy from 'recompose/createSpy'
+import { withProps, renameProp, compose } from '../'
+import { shallow } from 'enzyme'
 
-import { renderIntoDocument } from 'react-addons-test-utils'
+test('renameProp renames a single prop', t => {
+  const StringConcat = compose(
+    withProps({ so: 123, la: 456 }),
+    renameProp('so', 'do')
+  )('div')
 
-describe('renameProp()', () => {
-  it('renames a single prop', () => {
-    const spy = createSpy()
-    const StringConcat = compose(
-      withProps({ so: 123, la: 456 }),
-      renameProp('so', 'do'),
-      spy
-    )('div')
+  t.is(StringConcat.displayName, 'withProps(renameProp(div))')
 
-    expect(StringConcat.displayName).to.equal(
-      'withProps(renameProp(spy(div)))'
-    )
-
-    renderIntoDocument(<StringConcat />)
-
-    expect(spy.getProps()).to.eql({ do: 123, la: 456 })
-  })
+  const div = shallow(<StringConcat />).find('div')
+  t.deepEqual(div.props(), { do: 123, la: 456 })
 })

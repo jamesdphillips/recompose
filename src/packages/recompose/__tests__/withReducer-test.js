@@ -1,23 +1,18 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
-import omit from 'lodash/omit'
-import { withReducer, compose, flattenProp } from 'recompose'
-import createSpy from 'recompose/createSpy'
+import { withReducer, compose, flattenProp } from '../'
+import { mount } from 'enzyme'
 
-import { renderIntoDocument } from 'react-addons-test-utils'
-
-describe('withReducer()', () => {
+test('adds a stateful value and a function for updating it', t => {
   const SET_COUNTER = 'SET_COUNTER'
 
-  const reducer = (state, action) => (
+  const reducer = (state, action) =>
     action.type === SET_COUNTER
       ? { counter: action.payload }
       : state
-  )
 
   const initialState = { counter: 0 }
 
-  const spy = createSpy()
   const Counter = compose(
     withReducer(
       'state',
@@ -25,26 +20,16 @@ describe('withReducer()', () => {
       reducer,
       initialState
     ),
-    flattenProp('state'),
-    spy
+    flattenProp('state')
   )('div')
 
-  it('adds a stateful value and a function for updating it', () => {
-    expect(Counter.displayName).to.equal(
-      'withReducer(flattenProp(spy(div)))'
-    )
+  t.is(Counter.displayName, 'withReducer(flattenProp(div))')
 
-    renderIntoDocument(<Counter pass="through" />)
+  const div = mount(<Counter />).find('div')
+  const { dispatch } = div.props()
 
-    expect(omit(spy.getProps(), 'dispatch')).to.eql({
-      counter: 0,
-      pass: 'through'
-    })
+  t.is(div.prop('counter'), 0)
 
-    spy.getProps().dispatch({ type: SET_COUNTER, payload: 18 })
-    expect(omit(spy.getProps(), 'dispatch')).to.eql({
-      counter: 18,
-      pass: 'through'
-    })
-  })
+  dispatch({ type: SET_COUNTER, payload: 18 })
+  t.is(div.prop('counter'), 18)
 })

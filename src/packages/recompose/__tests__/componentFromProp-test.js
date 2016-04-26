@@ -1,20 +1,18 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
-import { componentFromProp } from 'recompose'
-import createSpy from 'recompose/createSpy'
+import { componentFromProp } from '../'
+import { mount } from 'enzyme'
 
-import { renderIntoDocument } from 'react-addons-test-utils'
+test('componentFromProp creates a component that takes a component as a prop and renders it with the rest of the props', t => {
+  const Container = componentFromProp('component')
+  t.is(Container.displayName, 'componentFromProp(component)')
 
-describe('componentFromProp()', () => {
-  it('returns a component takes a component as a prop and renders it with the rest of the props', () => {
-    const spy = createSpy()
-    const Spy = spy('div')
-    const SpyContainer = componentFromProp('component')
+  const Component = ({ pass }) =>
+    <div>Pass: {pass}</div>
 
-    expect(SpyContainer.displayName).to.equal('componentFromProp(component)')
-
-    renderIntoDocument(<SpyContainer component={Spy} pass="through" />)
-
-    expect(spy.getProps()).to.eql({ pass: 'through' })
-  })
+  const wrapper = mount(
+    <Container component={Component} pass="through" />
+  )
+  const div = wrapper.find('div')
+  t.is(div.text(), 'Pass: through')
 })

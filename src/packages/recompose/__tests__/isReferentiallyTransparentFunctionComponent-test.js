@@ -1,54 +1,52 @@
+import test from 'ava'
 import React, { Component, PropTypes } from 'react'
-import { expect } from 'chai'
 import isReferentiallyTransparentFunctionComponent
   from '../isReferentiallyTransparentFunctionComponent'
 
-describe('isReferentiallyTransparentFunctionComponent()', () => {
-  it('returns false for strings', () => {
-    expect(isReferentiallyTransparentFunctionComponent('div')).to.be.false
-  })
+test('isReferentiallyTransparentFunctionComponent returns false for strings', t => {
+  t.false(isReferentiallyTransparentFunctionComponent('div'))
+})
 
-  it('returns false for class components', () => {
-    class Foo extends Component {
-      render() {
-        return <div />
-      }
+test('isReferentiallyTransparentFunctionComponent returns false for class components', t => {
+  class Foo extends Component {
+    render() {
+      return <div />
     }
+  }
 
-    const Bar = React.createClass({
-      render() {
-        return <div />
-      }
-    })
-
-    expect(isReferentiallyTransparentFunctionComponent(Foo)).to.be.false
-    expect(isReferentiallyTransparentFunctionComponent(Bar)).to.be.false
+  const Bar = React.createClass({
+    render() {
+      return <div />
+    }
   })
 
-  it('returns true for functions', () => {
-    const Foo = props => <div {...props} />
+  t.false(isReferentiallyTransparentFunctionComponent(Foo))
+  t.false(isReferentiallyTransparentFunctionComponent(Bar))
+})
 
-    expect(isReferentiallyTransparentFunctionComponent(Foo)).to.be.true
-  })
+test('isReferentiallyTransparentFunctionComponent returns true for functions', t => {
+  const Foo = props => <div {...props} />
 
-  it('returns false for functions that use context', () => {
-    const Foo = (props, context) => <div {...props} {...context} />
-    Foo.contextTypes = { store: PropTypes.object }
+  t.true(isReferentiallyTransparentFunctionComponent(Foo))
+})
 
-    expect(isReferentiallyTransparentFunctionComponent(Foo)).to.be.false
-  })
+test('isReferentiallyTransparentFunctionComponent returns false for functions that use context', t => {
+  const Foo = (props, context) => <div {...props} {...context} />
+  Foo.contextTypes = { store: PropTypes.object }
 
-  it('returns false for functions that use default props', () => {
-    const Foo = (props, context) => <div {...props} {...context} />
-    Foo.defaultProps = { store: PropTypes.object }
+  t.false(isReferentiallyTransparentFunctionComponent(Foo))
+})
 
-    expect(isReferentiallyTransparentFunctionComponent(Foo)).to.be.false
-  })
+test('isReferentiallyTransparentFunctionComponent returns false for functions that use default props', t => {
+  const Foo = (props, context) => <div {...props} {...context} />
+  Foo.defaultProps = { store: PropTypes.object }
 
-  it('returns false for functions that use propTypes', () => {
-    const Foo = (props, context) => <div {...props} {...context} />
-    Foo.propTypes = { store: PropTypes.object }
+  t.false(isReferentiallyTransparentFunctionComponent(Foo))
+})
 
-    expect(isReferentiallyTransparentFunctionComponent(Foo)).to.be.false
-  })
+test('isReferentiallyTransparentFunctionComponent returns false for functions that use propTypes', t => {
+  const Foo = (props, context) => <div {...props} {...context} />
+  Foo.propTypes = { store: PropTypes.object }
+
+  t.false(isReferentiallyTransparentFunctionComponent(Foo))
 })

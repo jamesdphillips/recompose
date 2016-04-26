@@ -1,42 +1,36 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
-import omit from 'lodash/omit'
-import { branch, compose, withState, withProps } from 'recompose'
-import createSpy from 'recompose/createSpy'
+import { branch, compose, withState, withProps } from '../'
+import { mount } from 'enzyme'
 
-import { renderIntoDocument } from 'react-addons-test-utils'
-
-describe('branch()', () => {
-  it('tests props and applies one of two HoCs, for true and false', () => {
-    const spy = createSpy()
-
-    const SayMyName = compose(
-      withState('isBad', 'updateIsBad', false),
-      branch(
-        props => props.isBad,
-        withProps({ name: 'Heisenberg' }),
-        withProps({ name: 'Walter' })
-      ),
-      spy
-    )('div')
-
-    expect(SayMyName.displayName).to.equal(
-      'withState(branch(spy(div)))'
+test('branch tests props and applies one of two HoCs, for true and false', t => {
+  const SayMyName = compose(
+    withState('isBad', 'updateIsBad', false),
+    branch(
+      props => props.isBad,
+      withProps({ name: 'Heisenberg' }),
+      withProps({ name: 'Walter' })
     )
+  )(({ isBad, name, updateIsBad }) =>
+    <div>
+      <div className="isBad">{isBad ? 'true' : 'false'}</div>
+      <div className="name">{name}</div>
+      <button onClick={() => updateIsBad(b => !b)}>Toggle</button>
+    </div>
+  )
 
-    renderIntoDocument(<SayMyName pass="through" />)
+  t.is(SayMyName.displayName, 'withState(branch(Component))')
 
-    expect(omit(spy.getProps(), 'updateIsBad')).to.eql({
-      isBad: false,
-      name: 'Walter',
-      pass: 'through'
-    })
+  const wrapper = mount(<SayMyName />)
+  const getIsBad = () => wrapper.find('.isBad').text()
+  const getName = () => wrapper.find('.name').text()
+  const toggle = wrapper.find('button')
 
-    spy.getProps().updateIsBad(() => true)
-    expect(omit(spy.getProps(), 'updateIsBad')).to.eql({
-      isBad: true,
-      name: 'Heisenberg',
-      pass: 'through'
-    })
-  })
+  t.is(getIsBad(), 'false')
+  t.is(getName(), 'Walter')
+
+  toggle.simulate('click')
+
+  t.is(getIsBad(), 'true')
+  t.is(getName(), 'Heisenberg')
 })

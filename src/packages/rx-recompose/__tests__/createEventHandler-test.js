@@ -1,19 +1,19 @@
-import { expect } from 'chai'
-import { createEventHandler } from 'rx-recompose'
+import test from 'ava'
+import { Observable } from 'rxjs/Observable'
+import { createEventHandler } from '../'
 
-describe('createEventHandler()', () => {
-  it('creates a subject that broadcasts new values when called as a function', () => {
-    const result = []
-    const eventHandler = createEventHandler()
-    const subscription = eventHandler.subscribe({
-      next: v => result.push(v)
-    })
+// Observable polyfill
+global.Observable = Observable
 
-    eventHandler(1)
-    eventHandler(2)
-    eventHandler(3)
+test('createEventHandler creates a subject that broadcasts new values when called as a function', t => {
+  const result = []
+  const eventHandler = createEventHandler()
+  const subscription = eventHandler.subscribe(v => result.push(v))
 
-    subscription.unsubscribe()
-    expect(result).to.eql([1, 2, 3])
-  })
+  eventHandler(1)
+  eventHandler(2)
+  eventHandler(3)
+
+  subscription.unsubscribe()
+  t.deepEqual(result, [1, 2, 3])
 })

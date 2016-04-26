@@ -1,12 +1,9 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
-import { setDisplayName } from 'recompose'
+import { setDisplayName } from '../'
 
-describe('setDisplayName()', () => {
-  it('sets a static property on the base component', () => {
-    const BaseComponent = () => <div />
-    const NewComponent = setDisplayName('Foo', BaseComponent)
-
-    expect(NewComponent.displayName).to.eql('Foo')
-  })
+test('setDisplayName sets a static property on the base component', t => {
+  const BaseComponent = () => <div />
+  const NewComponent = setDisplayName('Foo')(BaseComponent)
+  t.is(NewComponent.displayName, 'Foo')
 })

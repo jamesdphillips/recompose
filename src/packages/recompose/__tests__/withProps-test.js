@@ -1,27 +1,30 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
-import { withProps, compose } from 'recompose'
-import createSpy from 'recompose/createSpy'
+import { withProps } from '../'
+import { shallow } from 'enzyme'
 
-import { renderIntoDocument } from 'react-addons-test-utils'
+test('withProps passes additional props to base component', t => {
+  const DoReMi = withProps({ so: 'do', la: 'fa' })('div')
+  t.is(DoReMi.displayName, 'withProps(div)')
 
-describe('withProps()', () => {
-  const spy = createSpy()
-  const DoReMi = compose(
-    withProps({ so: 'do', la: 'fa' }),
-    spy
-  )('div')
+  const div = shallow(<DoReMi />).find('div')
+  t.is(div.prop('so'), 'do')
+  t.is(div.prop('la'), 'fa')
+})
 
-  it('passes additional props to base component', () => {
-    expect(DoReMi.displayName).to.equal('withProps(spy(div))')
-    renderIntoDocument(<DoReMi />)
+test('withProps takes precedent over owner props', t => {
+  const DoReMi = withProps({ so: 'do', la: 'fa' })('div')
 
-    expect(spy.getProps()).to.eql({ so: 'do', la: 'fa' })
-  })
+  const div = shallow(<DoReMi la="ti" />).find('div')
+  t.is(div.prop('so'), 'do')
+  t.is(div.prop('la'), 'fa')
+})
 
-  it('takes precedent over owner props', () => {
-    renderIntoDocument(<DoReMi la="ti" />)
+test('withProps should accept function', t => {
+  const DoReMi = withProps(({ la }) => ({
+    so: la,
+  }))('div')
 
-    expect(spy.getProps()).to.eql({ so: 'do', la: 'fa' })
-  })
+  const div = shallow(<DoReMi la="la" />).find('div')
+  t.is(div.prop('so'), 'la')
 })

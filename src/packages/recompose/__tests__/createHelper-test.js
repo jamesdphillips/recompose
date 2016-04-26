@@ -1,46 +1,52 @@
-import { expect } from 'chai'
+import test from 'ava'
 import createHelper from '../createHelper'
-import lodashCurry from 'lodash/curry'
+import sinon from 'sinon'
 
-describe('createHelper()', () => {
+test('createHelper properly sets display name', t => {
+  const BaseComponent = { displayName: 'Base' }
+  const func = () => _ => ({})
+
+  t.is(
+    createHelper(func, 'func')()(BaseComponent).displayName,
+    'func(Base)'
+  )
+
+  t.is(
+    createHelper(func, 'func', false)()(BaseComponent).displayName,
+    undefined
+  )
+})
+
+test('createHelper works for zero-arg helpers', t => {
+  const BaseComponent = { displayName: 'Base' }
+  const func = _ => ({})
+
+  t.is(
+    createHelper(func, 'func', true, true)(BaseComponent).displayName,
+    'func(Base)'
+  )
+
+  t.is(
+    createHelper(func, 'func', false, true)(BaseComponent).displayName,
+    undefined
+  )
+})
+
+test.serial('createHelper warns if too many arguments are passed to a helper', t => {
+  const error = sinon.stub(console, 'error')
   const func = (a, b, c) => ({ a, b, c })
+  const helper = createHelper(func, 'func')
+  helper(1, 2, 3)
+  t.false(error.called)
 
-  const a = { displayName: 'a' }
-  const b = { displayName: 'b' }
-  const c = { displayName: 'c' }
+  helper(1, 2, 3, 4)
+  t.is(
+    error.firstCall.args[0],
+    'Too many arguments passed to func(). It should called like so: ' +
+    'func(...args)(BaseComponent).'
+  )
 
-  it('works like lodash\'s curry', () => {
-    const helper1 = createHelper(func)
-    const helper2 = lodashCurry(func)
-
-    const testEqualOutput = callback => {
-      const result1 = callback(helper1)
-      const result2 = callback(helper2)
-
-      expect(result1.a).to.equal(result2.a)
-      expect(result1.b).to.equal(result2.b)
-      expect(result1.c).to.equal(result2.c)
-    }
-
-    testEqualOutput(helper => helper(a, b, c))
-    testEqualOutput(helper => helper(a)(b)(c))
-    testEqualOutput(helper => helper()(a, b, c))
-    testEqualOutput(helper => helper(null)(b, c))
-    testEqualOutput(helper => helper(undefined)(b, c))
-    testEqualOutput(helper => helper(b, undefined, c))
-  })
-
-  it('properly sets display name', () => {
-    expect(
-      createHelper(func, 'func')(a, b, c).displayName
-    ).to.equal('func(c)')
-
-    expect(
-      createHelper(func, 'func', null, false)(a, b, c).displayName
-    ).to.be.undefined
-
-    expect(
-      createHelper(func, null, null, true)(a, b, c).displayName
-    ).to.be.undefined
-  })
+  /* eslint-disable */
+  console.error.restore()
+  /* eslint-enable */
 })

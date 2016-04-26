@@ -2,21 +2,21 @@ import { Component } from 'react'
 
 const createComponent = propsToVdom =>
   class RxComponent extends Component {
-    state = {}
+    state = {};
 
     // Stream of props
     props$ = new Observable(observer => {
       this.propsObserver = observer
       this.propsObserver.next(this.props)
-    })
+    });
 
     // Stream of vdom
-    vdom$ = propsToVdom(this.props$)
+    vdom$ = propsToVdom(this.props$);
 
-    didReceiveVdom = false
+    didReceiveVdom = false;
 
     // Keep track of whether the component has mounted
-    componentHasMounted = false
+    componentHasMounted = false;
 
     componentWillMount() {
       // Subscribe to child prop changes so we know when to re-render

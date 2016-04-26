@@ -1,76 +1,58 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
-import omit from 'lodash/omit'
-import { withState, compose } from 'recompose'
-import createSpy from 'recompose/createSpy'
+import { withState } from 'recompose'
+import { mount } from 'enzyme'
+import sinon from 'sinon'
 
-import { renderIntoDocument } from 'react-addons-test-utils'
+test('withState adds a stateful value and a function for updating it', t => {
+  const Counter = withState('counter', 'updateCounter', 0)('div')
+  t.is(Counter.displayName, 'withState(div)')
 
-describe('withState()', () => {
-  const spy = createSpy()
-  const Counter = compose(
-    withState('counter', 'updateCounter', 0),
-    spy
+  const div = mount(<Counter pass="through" />).find('div')
+  const { updateCounter } = div.props()
+
+  t.is(div.prop('counter'), 0)
+  t.is(div.prop('pass'), 'through')
+
+  updateCounter(n => n + 9)
+  updateCounter(n => n * 2)
+  t.is(div.prop('counter'), 18)
+  t.is(div.prop('pass'), 'through')
+})
+
+test('withState also accepts a non-function, which is passed directly to setState()', t => {
+  const Counter = withState('counter', 'updateCounter', 0)('div')
+  const div = mount(<Counter />).find('div')
+  const { updateCounter } = div.props()
+
+  updateCounter(18)
+  t.is(div.prop('counter'), 18)
+})
+
+test('withState accepts setState() callback', t => {
+  const Counter = withState('counter', 'updateCounter', 0)('div')
+  const div = mount(<Counter />).find('div')
+  const { updateCounter } = div.props()
+
+  const renderSpy = sinon.spy(() => {
+    t.is(div.prop('counter'), 18)
+  })
+
+  t.is(div.prop('counter'), 0)
+  updateCounter(18, renderSpy)
+})
+
+test('withState also accepts initialState as function of props', t => {
+  const Counter = withState(
+    'counter',
+    'updateCounter',
+    props => props.initialCounter
   )('div')
 
-  it('adds a stateful value and a function for updating it', () => {
-    expect(Counter.displayName).to.equal(
-      'withState(spy(div))'
-    )
+  const div = mount(<Counter initialCounter={1} />).find('div')
+  const { updateCounter } = div.props()
 
-    renderIntoDocument(<Counter pass="through" />)
-
-    expect(omit(spy.getProps(), 'updateCounter')).to.eql({
-      counter: 0,
-      pass: 'through'
-    })
-
-    spy.getProps().updateCounter(n => n + 9)
-    spy.getProps().updateCounter(n => n * 2)
-    expect(omit(spy.getProps(), 'updateCounter')).to.eql({
-      counter: 18,
-      pass: 'through'
-    })
-  })
-
-  it('also accepts a non-function, which is passed directly to setState()', () => {
-    renderIntoDocument(<Counter pass="through" />)
-
-    spy.getProps().updateCounter(18)
-    expect(omit(spy.getProps(), 'updateCounter')).to.eql({
-      counter: 18,
-      pass: 'through'
-    })
-  })
-
-  it('accepts setState() callback', () => {
-    const Counter2 = compose(
-      withState('counter', 'updateCounter', 0),
-      spy
-    )('div')
-
-    renderIntoDocument(<Counter2 pass="through" />)
-    const renderSpy = sinon.spy(() => {
-      expect(spy.getRenderCount()).to.equal(2)
-    })
-
-    expect(spy.getRenderCount()).to.equal(1)
-    spy.getProps().updateCounter(18, renderSpy)
-    expect(renderSpy.callCount).to.eql(1)
-  })
-
-  it('also accepts initialState as function of props', () => {
-    const spy2 = createSpy()
-    const Counter3 = compose(
-      withState('counter', 'updateCounter', props => props.initialCounter),
-      spy2
-    )('div')
-
-    renderIntoDocument(<Counter3 initialCounter={1} />)
-
-    expect(spy2.getProps().counter).to.equal(1)
-    spy2.getProps().updateCounter(n => n * 3)
-    expect(spy2.getProps().counter).to.equal(3)
-  })
-
+  t.is(div.prop('counter'), 1)
+  updateCounter(n => n * 3)
+  t.is(div.prop('counter'), 3)
 })

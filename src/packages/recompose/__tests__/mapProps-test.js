@@ -1,35 +1,24 @@
+import test from 'ava'
 import React from 'react'
-import { expect } from 'chai'
-import omit from 'lodash/omit'
-import { mapProps, withState, compose } from 'recompose'
-import createSpy from 'recompose/createSpy'
+import { mapProps, withState, compose } from '../'
+import { mount } from 'enzyme'
 
-import { renderIntoDocument } from 'react-addons-test-utils'
+test('mapProps maps owner props to child props', t => {
+  const StringConcat = compose(
+    withState('strings', 'updateStrings', ['do', 're', 'mi']),
+    mapProps(({ strings, ...rest }) => ({
+      ...rest,
+      string: strings.join('')
+    }))
+  )('div')
 
-describe('mapProps()', () => {
-  it('maps owner props to child props', () => {
-    const spy = createSpy()
-    const StringConcat = compose(
-      withState('strings', 'updateStrings', ['do', 're', 'mi']),
-      mapProps(({ strings, ...rest }) => ({
-        ...rest,
-        string: strings.join('')
-      })),
-      spy
-    )('div')
+  t.is(StringConcat.displayName, 'withState(mapProps(div))')
 
-    expect(StringConcat.displayName)
-      .to.equal('withState(mapProps(spy(div)))')
+  const div = mount(<StringConcat />).find('div')
+  const { updateStrings } = div.props()
 
-    renderIntoDocument(<StringConcat />)
+  t.is(div.prop('string'), 'doremi')
 
-    expect(omit(spy.getProps(), 'updateStrings')).to.eql({
-      string: 'doremi'
-    })
-
-    spy.getProps().updateStrings(strings => [...strings, 'fa'])
-    expect(omit(spy.getProps(), 'updateStrings')).to.eql({
-      string: 'doremifa'
-    })
-  })
+  updateStrings(strings => [...strings, 'fa'])
+  t.is(div.prop('string'), 'doremifa')
 })
