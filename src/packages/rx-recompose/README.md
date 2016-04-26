@@ -68,10 +68,13 @@ You may want to use this version to interoperate with other Recompose higher-ord
 ### `createEventHandler()`
 
 ```js
-createEventHandler(): Function & Observable
+createEventHandler<T>(): {
+  handler: (value: T) => void
+  stream: Observable<T>,
+}
 ```
 
-Creates an Observable that can be called like a function; when called, the observable emits a new value. This type of function is ideal for passing event handlers.
+Returns an object with properties `handler` and `stream`. `stream` is an observable sequence, and `handler` is a function that pushes new values onto the sequence. (This is akin to mailboxes in Elm.) Useful for creating event handlers like `onClick`.
 
 ## Example
 
@@ -84,9 +87,8 @@ import { startWith } from 'rxjs/operator/startWith'
 import { combineLatest } from 'rxjs/operator/combineLatest'
 
 const Counter = createComponent(props$ => {
-  const increment$ = createEventHandler()
-  const decrement$ = createEventHandler()
-
+  const { handler: increment, stream: increment$ } = createEventHandler()
+  const { handler: decrement, stream: decrement$ } = createEventHandler()
   const count$ = merge(
       increment$::map(() => 1),
       decrement$::map(() => -1)
@@ -99,8 +101,8 @@ const Counter = createComponent(props$ => {
     (props, count) =>
       <div {...props}>
         Count: {count}
-        <button onClick={increment$}>+</button>
-        <button onClick={decrement$}>-</button>
+        <button onClick={increment}>+</button>
+        <button onClick={decrement}>-</button>
       </div>
   )
 })
