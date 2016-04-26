@@ -4,7 +4,7 @@ import createComponent from './createComponent'
 
 const observeProps = ownerPropsToChildProps => BaseComponent =>
   createComponent(ownerProps$ =>
-    Observable.create(observer => {
+    new Observable(observer => {
       const subscription = ownerPropsToChildProps(ownerProps$).subscribe({
         next: childProps => {
           return observer.next(

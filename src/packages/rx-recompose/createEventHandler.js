@@ -1,10 +1,14 @@
 const createEventHandler = () => {
-  let observer
-  const stream = Observable.create(o => {
-    observer = o
+  const observers = []
+  const stream = new Observable(observer => {
+    observers.push(observer)
+    return () => {
+      const i = observers.indexOf(observer)
+      observers.splice(i, 1)
+    }
   })
   return {
-    handler: value => observer.next(value),
+    handler: value => observers.forEach(observer => observer.next(value)),
     stream
   }
 }
